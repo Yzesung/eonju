@@ -3,212 +3,703 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘 먹을 저녁 메뉴 추천 🍽️</title>
+    <title>버스 알리미 - 학생 맞춤형 지각 방지 웹 서비스</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Leaflet.js (Map Library) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        /* Custom scrollbar & UI enhancements */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
-
-        body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            color: #333;
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
         }
-
-        .container {
-            background-color: #ffffff;
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(255, 111, 0, 0.15);
-            text-align: center;
-            max-width: 480px;
-            width: 100%;
-            transition: transform 0.3s ease;
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
         }
-
-        h1 {
-            font-size: 26px;
-            color: #E65100;
-            margin-bottom: 12px;
-            font-weight: 800;
-        }
-
-        p.subtitle {
-            font-size: 15px;
-            color: #757575;
-            margin-bottom: 30px;
-        }
-
-        .result-box {
-            background-color: #FFF8E1;
-            border: 2px dashed #FFB300;
-            border-radius: 20px;
-            padding: 30px 20px;
-            margin-bottom: 30px;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .emoji {
-            font-size: 80px;
-            line-height: 1;
-            margin-bottom: 15px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .menu-name {
-            font-size: 22px;
-            font-weight: 700;
-            color: #424242;
-        }
-
-        .category {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 4px 12px;
-            background-color: #FFE082;
-            color: #E65100;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 12px;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #FF6F00 0%, #FF8F00 100%);
-            color: white;
+        
+        .custom-div-icon {
+            background: transparent;
             border: none;
-            padding: 16px 32px;
-            font-size: 18px;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(255, 111, 0, 0.3);
-            transition: all 0.2s ease;
-            width: 100%;
-            outline: none;
+        }
+        
+        .pulse-animation {
+            box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+            animation: pulse 1.6s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
-            background: linear-gradient(135deg, #E65100 0%, #FF6F00 100%);
+        .tab-page {
+            display: none;
+        }
+        .tab-page.active {
+            display: block;
+            animation: fadeIn 0.25s ease-in-out;
         }
 
-        .btn:active {
-            transform: translateY(1px);
-            box-shadow: 0 4px 12px rgba(255, 111, 0, 0.3);
-        }
-
-        /* Animation classes */
-        .bounce {
-            animation: bounce 0.5s ease;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between">
 
-    <div class="container">
-        <h1>오늘 뭐 먹지? 🤔</h1>
-        <p class="subtitle">결정 장애 해결사! 버튼을 눌러 오늘 저녁을 추천받아보세요.</p>
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-100">
+                    <i class="fa-solid fa-bus text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        버스 알리미
+                        <span class="text-[10px] bg-blue-50 text-blue-600 font-semibold px-2 py-0.5 rounded-full border border-blue-100">학생 맞춤형</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">실시간 교통 분석 & 스마트 지각 방지</p>
+                </div>
+            </div>
 
-        <div class="result-box">
-            <div id="emoji" class="emoji">❓</div>
-            <div id="menu-name" class="menu-name">버튼을 눌러주세요!</div>
-            <div id="category" class="category" style="display: none;">카테고리</div>
+            <!-- Header Quick Badge -->
+            <div id="sim-status-badge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="header-status-text">정상 원활</span>
+            </div>
         </div>
 
-        <button class="btn" onclick="recommendMenu()">오늘 먹을 저녁 메뉴 추천 🍽️</button>
-    </div>
+        <!-- Step Navigation Bar -->
+        <div class="bg-slate-100/80 border-t border-slate-200/80">
+            <div class="max-w-4xl mx-auto px-2 flex justify-between">
+                <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn flex-1 py-3 px-2 text-xs sm:text-sm font-bold text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition-all">
+                    <span class="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] flex items-center justify-center">1</span>
+                    <span class="hidden sm:inline">1.</span> 이동정보 설정
+                </button>
+                <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn flex-1 py-3 px-2 text-xs sm:text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition-all">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] flex items-center justify-center">2</span>
+                    <span class="hidden sm:inline">2.</span> 지도 & 행동지침
+                </button>
+                <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn flex-1 py-3 px-2 text-xs sm:text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition-all">
+                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] flex items-center justify-center">3</span>
+                    <span class="hidden sm:inline">3.</span> 대안 경로 추천
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 my-2">
+
+        <!-- ================================================================= -->
+        <!-- PAGE / TAB 1: 이동 정보 설정 -->
+        <!-- ================================================================= -->
+        <section id="page-1" class="tab-page active space-y-5">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">STEP 1. 이동 정보 설정</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">학원 수업 시간과 출발지를 입력하세요.</p>
+                    </div>
+                    <button onclick="fillSampleData()" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-colors">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 예시 데이터 채우기
+                    </button>
+                </div>
+
+                <form onsubmit="event.preventDefault(); goToNextStep(1);" class="space-y-4">
+                    <!-- 출발지 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">출발지 (현재 위치)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-location-dot absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500 text-sm"></i>
+                            <input type="text" id="input-start" value="강남역 11번 출구" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm" required>
+                        </div>
+                    </div>
+
+                    <!-- 목적지 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">목적지 (학원 위치)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-school absolute left-3.5 top-1/2 -translate-y-1/2 text-blue-600 text-sm"></i>
+                            <input type="text" id="input-dest" value="대치동 수학전문학원" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- 수업 시작 시간 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">수업 시작 시간</label>
+                            <div class="relative">
+                                <i class="fa-regular fa-clock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="time" id="input-time" value="18:00" class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm" required>
+                            </div>
+                        </div>
+
+                        <!-- 버스 번호 -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">탑승 예정 버스</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-bus absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                                <input type="text" id="input-bus" value="340번" class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-sm" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 걷는 속도 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">내 이동/걷기 속도</label>
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="speed" value="relaxed" class="peer hidden">
+                                <div class="p-2.5 border border-slate-200 rounded-xl text-slate-600 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all">
+                                    <div class="text-base mb-0.5">🚶‍♂️</div>
+                                    <div class="text-xs font-medium">느긋함</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="speed" value="normal" checked class="peer hidden">
+                                <div class="p-2.5 border border-slate-200 rounded-xl text-slate-600 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all">
+                                    <div class="text-base mb-0.5">🚶</div>
+                                    <div class="text-xs font-medium">보통</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="speed" value="fast" class="peer hidden">
+                                <div class="p-2.5 border border-slate-200 rounded-xl text-slate-600 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all">
+                                    <div class="text-base mb-0.5">🏃</div>
+                                    <div class="text-xs font-medium">빠름</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="speed" value="sprint" class="peer hidden">
+                                <div class="p-2.5 border border-slate-200 rounded-xl text-slate-600 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:text-blue-700 transition-all">
+                                    <div class="text-base mb-0.5">⚡</div>
+                                    <div class="text-xs font-medium">전력질주</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                            <span>다음 단계: 지도 & 행동 지침 확인</span>
+                            <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PAGE / TAB 2: 지도 & 실시간 행동 지침 -->
+        <!-- ================================================================= -->
+        <section id="page-2" class="tab-page space-y-5">
+            
+            <!-- Simulation Mode Controller Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <i class="fa-solid fa-flask text-indigo-500 text-sm"></i>
+                    <span>시연용 상황 설정:</span>
+                </div>
+                <div class="flex gap-1.5 w-full sm:w-auto">
+                    <button onclick="setSimulationState('normal')" id="btn-sim-normal" class="sim-btn flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold border border-blue-600 bg-blue-600 text-white">
+                        원활
+                    </button>
+                    <button onclick="setSimulationState('traffic')" id="btn-sim-traffic" class="sim-btn flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+                        도로 정체
+                    </button>
+                    <button onclick="setSimulationState('missed')" id="btn-sim-missed" class="sim-btn flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+                        버스 놓침
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action Guide Card -->
+            <div id="action-card-container" class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden transition-all duration-300">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-90">맞춤형 실시간 행동 가이드</span>
+                    <span id="guide-badge" class="px-2.5 py-0.5 bg-white/20 text-white text-xs font-semibold rounded-full backdrop-blur-sm">
+                        여유 있음
+                    </span>
+                </div>
+
+                <div id="guide-title" class="text-lg font-extrabold mb-1">
+                    🚶 보통 걸음으로 여유있게 출발하세요
+                </div>
+                <p id="guide-desc" class="text-xs text-emerald-50 leading-relaxed opacity-95">
+                    버스 도착까지 7분 남아있습니다. 정류장까지 도보 3분 거리이므로 차분히 이동하셔도 지각하지 않습니다.
+                </p>
+
+                <!-- Detailed Time Stats -->
+                <div class="mt-4 pt-3 border-t border-white/20 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-black/10 rounded-xl p-2">
+                        <div class="text-[10px] opacity-80">수업까지 남은시간</div>
+                        <div id="time-remaining" class="font-extrabold text-sm sm:text-base">25분</div>
+                    </div>
+                    <div class="bg-black/10 rounded-xl p-2">
+                        <div class="text-[10px] opacity-80">버스 도착 예정</div>
+                        <div id="bus-eta" class="font-extrabold text-sm sm:text-base">7분 후</div>
+                    </div>
+                    <div class="bg-black/10 rounded-xl p-2">
+                        <div class="text-[10px] opacity-80">학원 도착 예상</div>
+                        <div id="dest-eta" class="font-extrabold text-sm sm:text-base">17:52</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaflet Map Container -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-map-location-dot text-blue-600"></i> 실시간 이동 위치 지도
+                    </h3>
+                    <span id="badge-bus-no" class="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                        340번 버스
+                    </span>
+                </div>
+
+                <div class="relative w-full h-[300px] rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                    <div id="map" class="w-full h-full"></div>
+                </div>
+            </div>
+
+            <!-- Page Navigation Buttons -->
+            <div class="flex items-center justify-between pt-2">
+                <button onclick="switchTab(1)" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i> 이전: 정보 설정
+                </button>
+                <button onclick="switchTab(3)" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs flex items-center gap-1.5">
+                    <span>다음: 대안 경로 분석</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- PAGE / TAB 3: 대안 경로 추천 및 점수화 -->
+        <!-- ================================================================= -->
+        <section id="page-3" class="tab-page space-y-5">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800">STEP 3. 대안 경로 점수화 및 추천</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">버스 연체/놓침 상황 시 최적의 수단을 안내합니다.</p>
+                    </div>
+                    <div class="text-[11px] bg-slate-50 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-lg">
+                        공식: 정시성(50%) + 쾌적도(25%) + 학생비용(25%)
+                    </div>
+                </div>
+
+                <!-- Dynamic Alternative Route Cards -->
+                <div id="alt-routes-list" class="space-y-3">
+                    <!-- Dynamic rendering via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Navigation Back Button -->
+            <div class="flex items-center justify-between pt-2">
+                <button onclick="switchTab(2)" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i> 이전: 지도 및 가이드
+                </button>
+                <button onclick="switchTab(1)" class="px-4 py-2.5 border border-slate-300 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> 처음부터 다시 입력
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-400">
+        <p>© 2026 버스 알리미 (Bus Notifier) - 학생 맞춤형 스마트 교통 가이드</p>
+    </footer>
 
     <script>
-        const menuList = [
-            // 한식
-            { name: "비빔밥", emoji: "🍱", category: "한식" },
-            { name: "삼겹살", emoji: "🥓", category: "한식" },
-            { name: "김치찌개", emoji: "🍲", category: "한식" },
-            { name: "치킨", emoji: "🍗", category: "한식" },
-            { name: "떡볶이", emoji: "🍢", category: "한식" },
-            { name: "불고기", emoji: "🥩", category: "한식" },
-            { name: "삼계탕", emoji: "🐔", category: "한식" },
-            { name: "국밥", emoji: "🍚", category: "한식" },
+        // Global Application State
+        let currentTab = 1;
+        let map = null;
+        let busMarker = null;
+        let startMarker = null;
+        let destMarker = null;
+        let routePolyline = null;
+        let currentSimState = 'normal'; // 'normal', 'traffic', 'missed'
 
-            // 일식
-            { name: "초밥", emoji: "🍣", category: "일식" },
-            { name: "라멘", emoji: "🍜", category: "일식" },
-            { name: "돈가스", emoji: "🍱", category: "일식" },
-            { name: "우동", emoji: "🍲", category: "일식" },
-            { name: "카레", emoji: "🍛", category: "일식" },
+        // Demo Coordinates (Gangnam -> Daechi)
+        const coords = {
+            start: [37.4979, 127.0276], // 강남역
+            dest: [37.4938, 127.0583],  // 대치동 학원가
+            busNormal: [37.4995, 127.0180],
+            busTraffic: [37.5020, 127.0100],
+            busMissed: [37.4930, 127.0420]
+        };
 
-            // 중식
-            { name: "짜장면", emoji: "🍜", category: "중식" },
-            { name: "짬뽕", emoji: "🍜", category: "중식" },
-            { name: "마라탕", emoji: "🥘", category: "중식" },
-            { name: "딤섬", emoji: "🥟", category: "중식" },
+        window.onload = function() {
+            // App initialized on page load
+            calculateAndRender();
+        };
 
-            // 양식 & 기타
-            { name: "피자", emoji: "🍕", category: "양식" },
-            { name: "파스타", emoji: "🍝", category: "양식" },
-            { name: "햄버거", emoji: "🍔", category: "양식" },
-            { name: "스테이크", emoji: "🥩", category: "양식" },
-            { name: "타코", emoji: "🌮", category: "아시안/기타" },
-            { name: "샌드위치", emoji: "🥪", category: "양식" },
-            { name: "샐러드", emoji: "🥗", category: "다이어트" }
-        ];
+        // Tab Switching Handler
+        function switchTab(tabNum) {
+            currentTab = tabNum;
 
-        let isSpinning = false;
-
-        function recommendMenu() {
-            if (isSpinning) return;
-            isSpinning = true;
-
-            const emojiEl = document.getElementById('emoji');
-            const menuNameEl = document.getElementById('menu-name');
-            const categoryEl = document.getElementById('category');
-
-            let counter = 0;
-            const maxCounts = 15; // 슬롯머신 효과 횟수
-            const interval = setInterval(() => {
-                const randomTemp = menuList[Math.floor(Math.random() * menuList.length)];
-                emojiEl.textContent = randomTemp.emoji;
-                menuNameEl.textContent = randomTemp.name;
-                categoryEl.style.display = 'none';
-                
-                counter++;
-                if (counter >= maxCounts) {
-                    clearInterval(interval);
-                    
-                    // 최종 메뉴 선정
-                    const finalMenu = menuList[Math.floor(Math.random() * menuList.length)];
-                    emojiEl.textContent = finalMenu.emoji;
-                    menuNameEl.textContent = finalMenu.name;
-                    categoryEl.textContent = finalMenu.category;
-                    categoryEl.style.display = 'inline-block';
-
-                    // 애니메이션 효과
-                    emojiEl.classList.remove('bounce');
-                    void emojiEl.offsetWidth; // trigger reflow
-                    emojiEl.classList.add('bounce');
-
-                    isSpinning = false;
+            // Update Tab Page Visibility
+            document.querySelectorAll('.tab-page').forEach((page, idx) => {
+                if (idx + 1 === tabNum) {
+                    page.classList.add('active');
+                } else {
+                    page.classList.remove('active');
                 }
-            }, 80);
+            });
+
+            // Update Header Tab Navigation Buttons
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`tab-btn-${i}`);
+                const badge = btn.querySelector('span');
+
+                if (i === tabNum) {
+                    btn.className = "tab-btn flex-1 py-3 px-2 text-xs sm:text-sm font-bold text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition-all";
+                    badge.className = "w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] flex items-center justify-center";
+                } else {
+                    btn.className = "tab-btn flex-1 py-3 px-2 text-xs sm:text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 flex items-center justify-center gap-2 transition-all";
+                    badge.className = "w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] flex items-center justify-center";
+                }
+            }
+
+            // Lazy initialize Leaflet map when Tab 2 becomes active
+            if (tabNum === 2) {
+                setTimeout(() => {
+                    if (!map) {
+                        initLeafletMap();
+                    } else {
+                        map.invalidateSize();
+                    }
+                }, 100);
+            }
+        }
+
+        function goToNextStep(fromStep) {
+            switchTab(fromStep + 1);
+        }
+
+        // Initialize Leaflet Map
+        function initLeafletMap() {
+            map = L.map('map', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView([37.4960, 127.0400], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+            }).addTo(map);
+
+            const startIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white"><i class="fa-solid fa-user"></i></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+
+            const destIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xs shadow-md border-2 border-white"><i class="fa-solid fa-graduation-cap"></i></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+
+            startMarker = L.marker(coords.start, { icon: startIcon }).addTo(map).bindPopup("<b>출발지</b>");
+            destMarker = L.marker(coords.dest, { icon: destIcon }).addTo(map).bindPopup("<b>학원</b>");
+
+            updateMapElements();
+        }
+
+        function updateMapElements() {
+            if (!map) return;
+
+            let currentBusCoord = coords.busNormal;
+            if (currentSimState === 'traffic') currentBusCoord = coords.busTraffic;
+            if (currentSimState === 'missed') currentBusCoord = coords.busMissed;
+
+            // Bus Marker
+            const busIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-lg border-2 border-white pulse-animation"><i class="fa-solid fa-bus"></i></div>`,
+                iconSize: [36, 36],
+                iconAnchor: [18, 18]
+            });
+
+            if (busMarker) {
+                busMarker.setLatLng(currentBusCoord);
+            } else {
+                busMarker = L.marker(currentBusCoord, { icon: busIcon }).addTo(map);
+            }
+
+            // Route Polyline
+            if (routePolyline) {
+                map.removeLayer(routePolyline);
+            }
+
+            const lineColor = currentSimState === 'traffic' ? '#f59e0b' : (currentSimState === 'missed' ? '#ef4444' : '#2563eb');
+            routePolyline = L.polyline([currentBusCoord, coords.start, coords.dest], {
+                color: lineColor,
+                weight: 4,
+                opacity: 0.8,
+                dashArray: currentSimState === 'missed' ? '6, 6' : null
+            }).addTo(map);
+
+            map.fitBounds(L.latLngBounds([coords.start, coords.dest, currentBusCoord]), { padding: [25, 25] });
+        }
+
+        // Fill Sample Data Button
+        function fillSampleData() {
+            document.getElementById('input-start').value = "강남역 11번 출구";
+            document.getElementById('input-dest').value = "대치동 수학전문학원";
+            document.getElementById('input-time').value = "18:00";
+            document.getElementById('input-bus').value = "340번";
+
+            const radios = document.getElementsByName('speed');
+            for (let r of radios) {
+                if (r.value === 'normal') r.checked = true;
+            }
+
+            calculateAndRender();
+        }
+
+        // Simulation Controller
+        function setSimulationState(state) {
+            currentSimState = state;
+
+            // Buttons visual update
+            const btns = {
+                'normal': document.getElementById('btn-sim-normal'),
+                'traffic': document.getElementById('btn-sim-traffic'),
+                'missed': document.getElementById('btn-sim-missed')
+            };
+
+            Object.keys(btns).forEach(key => {
+                if (key === state) {
+                    btns[key].className = "sim-btn flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold border border-blue-600 bg-blue-600 text-white";
+                } else {
+                    btns[key].className = "sim-btn flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
+                }
+            });
+
+            updateMapElements();
+            calculateAndRender();
+        }
+
+        // Update All UI Components
+        function calculateAndRender() {
+            const busNo = document.getElementById('input-bus').value || "340번";
+            document.getElementById('badge-bus-no').innerText = `${busNo} 버스`;
+
+            // Header Badge Update
+            const headerBadgeText = document.getElementById('header-status-text');
+            const headerBadge = document.getElementById('sim-status-badge');
+
+            if (currentSimState === 'normal') {
+                headerBadgeText.innerText = "정상 원활";
+                headerBadge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold";
+            } else if (currentSimState === 'traffic') {
+                headerBadgeText.innerText = "도로 정체 발생";
+                headerBadge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-semibold";
+            } else {
+                headerBadgeText.innerText = "버스 놓침/통과";
+                headerBadge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full text-xs font-semibold";
+            }
+
+            // Step 2 Action Card Update
+            const cardContainer = document.getElementById('action-card-container');
+            const guideTitle = document.getElementById('guide-title');
+            const guideDesc = document.getElementById('guide-desc');
+            const guideBadge = document.getElementById('guide-badge');
+
+            const timeRemEl = document.getElementById('time-remaining');
+            const busEtaEl = document.getElementById('bus-eta');
+            const destEtaEl = document.getElementById('dest-eta');
+
+            if (currentSimState === 'normal') {
+                cardContainer.className = "bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden transition-all duration-300";
+                guideBadge.innerText = "여유 있음";
+                guideTitle.innerHTML = `🚶 보통 걸음으로 여유있게 출발하세요`;
+                guideDesc.innerText = `${busNo} 버스 도착까지 7분 남았습니다. 정류장까지 도보 3분 거리이므로 차분히 걸어가셔도 충분합니다.`;
+
+                timeRemEl.innerText = "25분";
+                busEtaEl.innerText = "7분 후";
+                destEtaEl.innerText = "17:52";
+
+            } else if (currentSimState === 'traffic') {
+                cardContainer.className = "bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden transition-all duration-300";
+                guideBadge.innerText = "지각 위험!";
+                guideTitle.innerHTML = `🏃‍♂️ 지금 바로 정류장으로 전력 질주하세요!`;
+                guideDesc.innerText = `도로 정체로 ${busNo} 버스도 도착 지연 중입니다! 지금 2분 내로 도착해야 겨우 탑승이 가능합니다.`;
+
+                timeRemEl.innerText = "12분";
+                busEtaEl.innerText = "2분 후";
+                destEtaEl.innerText = "18:01";
+
+            } else { // missed
+                cardContainer.className = "bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-5 text-white shadow-md relative overflow-hidden transition-all duration-300";
+                guideBadge.innerText = "탑승 불가";
+                guideTitle.innerHTML = `🚨 버스를 놓쳤습니다! 대안 경로로 전환하세요.`;
+                guideDesc.innerText = `${busNo} 버스가 이미 지나쳤습니다. [3단계 대안 경로 추천] 탭으로 이동하여 지각을 최소화하는 최적 수단을 확인하세요.`;
+
+                timeRemEl.innerText = "15분";
+                busEtaEl.innerText = "놓침";
+                destEtaEl.innerText = "대안 이용 필요";
+            }
+
+            // Step 3 Alternative Routes Calculation
+            renderAlternativeRoutes();
+        }
+
+        function renderAlternativeRoutes() {
+            let routes = [
+                {
+                    id: 'subway',
+                    title: '지하철 우회 (2호선 → 3호선)',
+                    icon: 'fa-subway',
+                    time: '14분',
+                    cost: '1,400원',
+                    punctuality: currentSimState === 'traffic' ? 95 : 90,
+                    comfort: 70,
+                    studentCost: 95
+                },
+                {
+                    id: 'bike',
+                    title: '따릉이(자전거) + 도보 지름길',
+                    icon: 'fa-bicycle',
+                    time: '12분',
+                    cost: '1,000원',
+                    punctuality: 80,
+                    comfort: 60,
+                    studentCost: 100
+                },
+                {
+                    id: 'taxi',
+                    title: '택시 / 호출 차량',
+                    icon: 'fa-taxi',
+                    time: currentSimState === 'traffic' ? '22분 (정체)' : '9분',
+                    cost: '6,800원',
+                    punctuality: currentSimState === 'traffic' ? 35 : 85,
+                    comfort: 95,
+                    studentCost: 30
+                }
+            ];
+
+            // Formula: Score = (Punctuality * 0.5) + (Comfort * 0.25) + (StudentCost * 0.25)
+            routes.forEach(r => {
+                r.totalScore = Math.round((r.punctuality * 0.5) + (r.comfort * 0.25) + (r.studentCost * 0.25));
+            });
+
+            // Sort highest score first
+            routes.sort((a, b) => b.totalScore - a.totalScore);
+
+            const container = document.getElementById('alt-routes-list');
+            container.innerHTML = '';
+
+            routes.forEach((route, index) => {
+                const isTop = index === 0;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border transition-all ${
+                    isTop 
+                    ? 'bg-blue-50/60 border-blue-500 shadow-sm ring-1 ring-blue-500/30 relative overflow-hidden' 
+                    : 'bg-white border-slate-200'
+                }`;
+
+                card.innerHTML = `
+                    ${isTop ? `
+                        <div class="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-bl-lg flex items-center gap-1">
+                            <i class="fa-solid fa-crown text-amber-300"></i> TOP 1 최적 추천
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg ${isTop ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-bold text-xs">
+                                <i class="fa-solid ${route.icon}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">${route.title}</h3>
+                                <div class="flex items-center gap-2.5 text-[11px] text-slate-500 mt-0.5">
+                                    <span><i class="fa-regular fa-clock text-blue-500"></i> ${route.time} 소요</span>
+                                    <span><i class="fa-solid fa-won-sign text-emerald-500"></i> ${route.cost}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <div class="text-lg font-black ${isTop ? 'text-blue-600' : 'text-slate-700'}">${route.totalScore}<span class="text-xs font-normal text-slate-400">점</span></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2.5 pt-2 border-t border-slate-200/60 grid grid-cols-3 gap-2 text-[10px]">
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-0.5">
+                                <span>정시성(50%)</span>
+                                <span class="font-bold text-slate-600">${route.punctuality}</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                                <div class="bg-blue-500 h-1 rounded-full" style="width: ${route.punctuality}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-0.5">
+                                <span>쾌적도(25%)</span>
+                                <span class="font-bold text-slate-600">${route.comfort}</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                                <div class="bg-emerald-500 h-1 rounded-full" style="width: ${route.comfort}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-slate-400 mb-0.5">
+                                <span>비용적합(25%)</span>
+                                <span class="font-bold text-slate-600">${route.studentCost}</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                                <div class="bg-purple-500 h-1 rounded-full" style="width: ${route.studentCost}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
         }
     </script>
 </body>
